@@ -2,6 +2,7 @@
   <div class="home">
     <van-icon class="add" @click="show = true" size="30px" name="add" />
     <van-icon class="edit" @click="showEdit = true" size="30px" name="setting" />
+    <van-icon class="replay" @click="getUserData" size="30px" name="replay" />
     <section class="result" v-if="teams.blue">
       <div class="result-content">
         <div>
@@ -27,6 +28,7 @@
       </div>
       <div>
         <van-button type="primary" class="btn" size="small" @click="settlement">结算</van-button>
+        <van-button type="primary" class="btn btn-right" size="small" @click="buyAdmissionBtn">入场</van-button>
         <van-button type="info" class="btn btn-right" size="small" @click="cancel">取消</van-button>
       </div>
     </section>
@@ -44,7 +46,7 @@
           <h4>添加游戏人员</h4>
           <van-field v-model="name" label="名字" placeholder="请输入名字" />
           <van-field v-model="score" label="分数" placeholder="请输入分数" />
-          <van-button type="primary" class="btn" size="small" @click="submit">确定</van-button>
+          <van-button type="primary" class="btn" size="small" @click="add">确定</van-button>
         </div>
       </div>
     </van-overlay>
@@ -82,40 +84,119 @@
         </div>
       </div>
     </van-overlay>
+    <van-overlay :show="showBuyAdmission" @click="showBuyAdmission = false">
+      <div class="wrapper" >
+        <div class="content content-buy" v-if="teams.blue" @click.stop>
+          <h4>买入场</h4>
+          <div class="label">
+            选择卖的选手资格：
+          </div>
+          <van-radio-group direction="horizontal" v-model="sellId">
+            <van-radio v-for="item in teamsPerson.blue" :key="item.id" :name="item.id">{{item.name}}</van-radio>
+            <van-radio v-for="item in teamsPerson.red" :key="item.id" :name="item.id">{{item.name}}</van-radio>
+          </van-radio-group>
+          <div class="label">
+            选择购买的人：
+          </div>
+          <van-radio-group direction="horizontal" v-model="buyId">
+            <van-radio v-for="item in filterNoAdmission()" :key="item.id" :name="item.id">{{item.name}}</van-radio>
+          </van-radio-group>
+          <van-field v-model="buyScore" label="花费" placeholder="请输入分数" />
+          <van-button type="primary" class="btn" size="small" @click="buy">确定</van-button>
+        </div>
+      </div>
+    </van-overlay>
   </div>
 </template>
 
 <script>
 import { addUser, getUser, delUser } from '@/apis/user'
-// import { addUser, updateUser, getUser, delUser } from '@/apis/user'
 import { updateScore } from '@/apis/score'
+// 基础倍率分
 const base = 50
 export default {
   name: 'Home',
   data () {
     return {
-      show: false,
-      showEdit: false,
-      showScore: false,
-      name: '',
-      score: 0,
-      result: [],
-      persons: [],
-      teams: {},
-      checked: true,
-      mark: undefined
+      show: false, // 添加人员弹窗
+      showEdit: false, // 编辑分数弹窗
+      showScore: false, // 确认分数弹窗
+      showBuyAdmission: false, // 买入场券弹窗
+      name: '', // 添加人员名字
+      score: 0, // 添加人员分数
+      result: [], // 选择排位的人员
+      persons: [], // 用户列表
+      teamsPerson: {}, // 开赛队伍
+      teams: {}, // 开赛队伍,有各自倍率
+      checked: true, // true：蓝队赢；false：红队赢
+      mark: undefined, // 赢得分数
+      sellId: undefined, // 卖资格人
+      buyId: undefined, // 买资格人
+      buyScore: undefined // 购买花费的分数
     }
   },
   created () {
+    // 获取用户数据
     this.getUserData()
   },
   methods: {
+    filterNoAdmission () {
+      const result = []
+      this.persons.forEach(item => {
+        let have = false
+        Object.keys(this.teamsPerson).forEach(teams => {
+          this.teamsPerson[teams].forEach(person => {
+            if (person.id === item.id) {
+              have = true
+            }
+          })
+        })
+        if (!have) result.push(item)
+      })
+      return result
+    },
+    buyAdmissionBtn () {
+      this.showBuyAdmission = true
+    },
+    buy () {
+      if (this.sellId && this.buyId && this.buyScore) {
+        const buyScore = parseInt(this.buyScore)
+        const [sellUser] = this.persons.filter(item => item.id === this.sellId)
+        const [buyUser] = this.persons.filter(item => item.id === this.buyId)
+        sellUser.score = parseInt(sellUser.score) + parseInt(buyScore)
+        buyUser.score = parseInt(buyUser.score) - parseInt(buyScore)
+        const params = [sellUser, buyUser].map(item => ({
+          userId: item.id,
+          score: item.score
+        }))
+        const teamsPerson = {}
+        const mapCb = item => {
+          if (item.id === this.sellId) {
+            return Object.assign({}, buyUser)
+          } else {
+            return item
+          }
+        }
+        teamsPerson.blue = this.teamsPerson.blue.map(mapCb)
+        teamsPerson.red = this.teamsPerson.red.map(mapCb)
+        this.teamsPerson = teamsPerson
+        this.editScore(params).then(res => {
+          this.calculationRatio(teamsPerson)
+          this.sellId = undefined
+          this.buyId = undefined
+          this.buyScore = undefined
+          this.showBuyAdmission = false
+        })
+      }
+    },
+    // 获取比赛数据
     getUserData () {
       getUser().then(res => {
         const data = res.data.data
         this.persons = data.sort((a, b) => b.score - a.score)
       })
     },
+    // 确认分数
     confirm () {
       const params = []
       Object.keys(this.teams).forEach(team => {
@@ -131,6 +212,7 @@ export default {
       this.mark = undefined
       this.showScore = false
     },
+    // 编辑分数
     editScore (item) {
       return new Promise((resolve, reject) => {
         if (item instanceof Array) {
@@ -143,6 +225,7 @@ export default {
         }
       })
     },
+    // 删除用户
     deleteUser (item) {
       delUser(item.id).then(res => {
         if (res.data.success) {
@@ -152,6 +235,7 @@ export default {
         }
       })
     },
+    // 队内人员倍率
     getInsideMultipleTeam (team) {
       const [person1, person2] = team
       const diff = Math.abs(person1.score - person2.score)
@@ -171,6 +255,7 @@ export default {
       }
       return [person1, person2]
     },
+    // 分数结算
     settlement () {
       if (this.mark === undefined) return
       // 依据蓝方计算分数
@@ -199,14 +284,13 @@ export default {
       })
       this.showScore = true
     },
+    // 取消此次排位
     cancel () {
       this.teams = {}
       this.mark = undefined
     },
-    saveGame () {
-      window.localStorage.setItem('persons', JSON.stringify(this.persons))
-    },
-    submit () {
+    // 添加用户
+    add () {
       if (!this.name) return
       const exsit = this.persons.filter(item => item.name === this.name)
       if (exsit.length) {
@@ -227,6 +311,7 @@ export default {
         })
       }
     },
+    // 正弦获取倍率
     getSinMultiple (mark, maxDiff, maxMuliple) {
       mark = Math.abs(mark)
       if (mark >= maxDiff) {
@@ -234,6 +319,7 @@ export default {
       }
       return Math.sin(2 * Math.PI / 360 * 90 * mark / maxDiff) * maxMuliple
     },
+    // 开始排位
     play () {
       if (this.result.length < 4) {
         this.$toast('请选择4人以上')
@@ -248,7 +334,13 @@ export default {
       })
       // 获取蓝红两队
       const teamsPerson = this.getTeam(result)
-
+      this.teamsPerson = teamsPerson
+      // 计算两队的倍率
+      this.calculationRatio(teamsPerson)
+    },
+    // 计算两队的倍率
+    calculationRatio (teamsPerson) {
+      teamsPerson = JSON.parse(JSON.stringify(teamsPerson))
       // 蓝队总分数
       const blueMark = teamsPerson.blue.reduce((total, item) => total + parseInt(item.score), 0)
       // 蓝队平均分
@@ -332,6 +424,11 @@ export default {
     bottom: 10px;
     left: 50px;
   }
+  .replay {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+  }
   .play {
     margin-top: 20px;
     width: 100px
@@ -382,6 +479,16 @@ export default {
     .content {
       border-radius: 8px;
       padding: 10px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #fff;
+      &.content-buy {
+        width: 200px;
+      }
+      .label {
+        margin: 8px auto;
+      }
       h4 {
         margin: 10px auto;
       }
@@ -392,11 +499,6 @@ export default {
       .li {
         margin: 5px auto;
       }
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: #fff;
-
     }
   }
 }
