@@ -35,8 +35,13 @@
     <van-button v-if="!teams.blue" type="primary" class="play" @click="play">排位</van-button>
     <van-checkbox-group v-model="result">
       <van-checkbox class="item" v-for="item in persons" :key="item.name" :name="item.name">
-        <span class="name">{{item.name}}</span>
-        <span class="value">{{item.score}}</span>
+        <div class="item-content">
+          <div class="name-container">
+            <span :class="`name ${item.name === '徐俊' && 'rainbow'}`">{{item.name}}</span>
+            <img v-if="icons[item.name]" :src="icons[item.name]"/>
+          </div>
+          <span class="value">{{item.score}}</span>
+        </div>
       </van-checkbox>
     </van-checkbox-group>
 
@@ -132,7 +137,11 @@ export default {
       mark: undefined, // 赢得分数
       sellId: undefined, // 卖资格人
       buyId: undefined, // 买资格人
-      buyScore: undefined // 购买花费的分数
+      buyScore: undefined, // 购买花费的分数
+      icons: {
+        徐俊: 'https://pic-1254114567.cos.ap-shanghai.myqcloud.com/table-football/%E7%8E%8B%E8%80%85.jpeg',
+        齐铭: 'https://pic-1254114567.cos.ap-shanghai.myqcloud.com/table-football/WechatIMG23.jpeg'
+      }
     }
   },
   created () {
@@ -434,12 +443,43 @@ export default {
     width: 100px
   }
   .item {
-    margin-top: 10px
+    margin-top: 10px;
   }
-  .name {
-    display:inline-block;
-    width: 60px;
+  .item-content {
+    display: flex;
+    align-items: center;
+    .name-container {
+      display: flex;
+      align-items: center;
+      width: 60px;
+      .name {
+        display:inline-block;
+      }
+      img {
+        width: 20px;
+        height: 20px
+      }
+    }
+
   }
+  .rainbow {
+    color: #000;
+    background: linear-gradient(45deg, #f86527, #fcd72d 25%, #39eef6 50%, #fcd72d 75%, #f86527);
+    color: transparent;
+    /*设置字体颜色透明*/
+    background-clip: text;
+    background-size: 300% 100%;
+    animation:  maskedAnimation 5s infinite linear;
+  }
+
+@keyframes maskedAnimation {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
   .value {
     display: inline-block;
     width: 60px;
@@ -494,7 +534,8 @@ export default {
       }
       .items {
         height: 300px;
-        overflow: auto;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
       }
       .li {
         margin: 5px auto;

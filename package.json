@@ -48,8 +48,12 @@
     "rules": {}
   },
   "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead"
+		"last 20 Chrome versions",
+		"last 20 Firefox versions",
+		"last 20 Opera versions",
+		"Explorer >= 11",
+		"Safari >= 8",
+		"Android >= 4.4",
+		"iOS >= 8"
   ]
 }
