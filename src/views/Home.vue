@@ -251,7 +251,6 @@ export default {
       const multiple = this.getSinMultiple(diff, base * 8, 0.4)
       const lessMultiple = parseFloat((0.5 - multiple).toFixed(2))
       const moreMultiple = parseFloat((0.5 + multiple).toFixed(2))
-      console.log(multiple, lessMultiple, moreMultiple)
       if (person1.score >= person2.score) {
         person1.win = lessMultiple
         person1.lose = moreMultiple
@@ -374,7 +373,6 @@ export default {
         // 红队胜利时，红队的倍率
         redTeamMultiple = 1 - this.getSinMultiple(diff, base * 5, 0.9)
       }
-      console.log(blueTeamMultiple, redTeamMultiple)
       // 队内的倍率
       teamsPerson.blue = this.getInsideMultipleTeam(teamsPerson.blue)
       teamsPerson.red = this.getInsideMultipleTeam(teamsPerson.red)
