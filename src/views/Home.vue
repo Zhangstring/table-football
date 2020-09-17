@@ -248,9 +248,10 @@ export default {
     getInsideMultipleTeam (team) {
       const [person1, person2] = team
       const diff = Math.abs(person1.score - person2.score)
-      const multiple = this.getSinMultiple(diff, base * 10, 0.4)
+      const multiple = this.getSinMultiple(diff, base * 8, 0.4)
       const lessMultiple = parseFloat((0.5 - multiple).toFixed(2))
       const moreMultiple = parseFloat((0.5 + multiple).toFixed(2))
+      console.log(multiple, lessMultiple, moreMultiple)
       if (person1.score >= person2.score) {
         person1.win = lessMultiple
         person1.lose = moreMultiple
@@ -364,15 +365,16 @@ export default {
       // 蓝队的平均分大于红队
       if (blueAverage >= redAverage) {
         // 蓝队胜利时，蓝队的倍率
-        blueTeamMultiple = 1 - this.getSinMultiple(diff, base * 10, 0.9)
+        blueTeamMultiple = 1 - this.getSinMultiple(diff, base * 5, 0.9)
         // 红队胜利时，红队的倍率
         redTeamMultiple = diff / base + 1
       } else {
         // 蓝队胜利时，蓝队的倍率
         blueTeamMultiple = diff / base + 1
         // 红队胜利时，红队的倍率
-        redTeamMultiple = 1 - this.getSinMultiple(diff, base * 10, 0.9)
+        redTeamMultiple = 1 - this.getSinMultiple(diff, base * 5, 0.9)
       }
+      console.log(blueTeamMultiple, redTeamMultiple)
       // 队内的倍率
       teamsPerson.blue = this.getInsideMultipleTeam(teamsPerson.blue)
       teamsPerson.red = this.getInsideMultipleTeam(teamsPerson.red)
