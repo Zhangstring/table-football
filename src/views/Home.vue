@@ -34,10 +34,10 @@
     </section>
     <van-button v-if="!teams.blue" type="primary" class="play" @click="play">排位</van-button>
     <van-checkbox-group v-model="result">
-      <van-checkbox class="item" v-for="item in persons" :key="item.name" :name="item.name">
+      <van-checkbox class="item" v-for="(item, index) in persons" :key="item.name" :name="item.name">
         <div class="item-content">
           <div class="name-container">
-            <span :class="`name ${item.name === '徐俊' && 'rainbow'}`">{{item.name}}</span>
+            <span :class="`name ${rainbowName.includes(item.name) && 'rainbow'} ${index === 0 && 'rainbow'} ${index === persons.length - 1 && 'last-name'}`">{{item.name}}</span>
             <img v-if="icons[item.name]" :src="icons[item.name]"/>
           </div>
           <span class="value">{{item.score}}</span>
@@ -138,8 +138,10 @@ export default {
       sellId: undefined, // 卖资格人
       buyId: undefined, // 买资格人
       buyScore: undefined, // 购买花费的分数
+      rainbowName: ['徐俊'],
       icons: {
         徐俊: 'https://pic-1254114567.cos.ap-shanghai.myqcloud.com/table-football/%E7%8E%8B%E8%80%85.jpeg',
+        // 刚强: 'https://pic-1254114567.cos.ap-shanghai.myqcloud.com/table-football/%E7%8E%8B%E8%80%85.jpeg',
         齐铭: 'https://pic-1254114567.cos.ap-shanghai.myqcloud.com/table-football/WechatIMG23.jpeg'
       }
     }
@@ -461,6 +463,9 @@ export default {
       }
     }
 
+  }
+  .last-name {
+    color: #ec3833;
   }
   .rainbow {
     color: #000;
